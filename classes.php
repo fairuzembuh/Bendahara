@@ -1,35 +1,13 @@
 <?php
-// =============================================
-// FILE: classes.php
-// File ini berisi semua class OOP yang dipakai
-// =============================================
-
-// Load config.php supaya bisa pakai class Database
 require_once __DIR__ . '/config.php';
-
-
-/**
- * =============================================
- * CLASS 1: Auth
- * =============================================
- * Class untuk mengelola login dan logout.
- *
- * Konsep OOP: ENCAPSULATION (property $db PRIVATE), CONSTRUCTOR
- */
 class Auth {
 
-    // Property PRIVATE (Encapsulation)
     private $db;
-
-    // Constructor — inisialisasi koneksi database
     public function __construct() {
         $this->db = Database::getInstance();
     }
 
-    // Method login — cek username dan password
     public function login($username, $password) {
-
-        // Cek admin (hardcode)
         if ($username == 'admin' && $password == 'admin123') {
             $_SESSION['user_id'] = 0;
             $_SESSION['nama']    = 'Administrator';
@@ -37,7 +15,6 @@ class Auth {
             return true;
         }
 
-        // Cek di tabel santri
         $username = $this->db->escape($username);
         $password = $this->db->escape($password);
 
@@ -57,39 +34,19 @@ class Auth {
         return false;
     }
 
-    // Method logout — hapus session
     public function logout() {
         session_destroy();
     }
 }
 
-
-/**
- * =============================================
- * CLASS 2: Santri
- * =============================================
- * Class untuk mengelola data santri (CRUD).
- *
- * Konsep OOP:
- * - ENCAPSULATION : property $nama, $kamar, $noHp dibuat PRIVATE,
- *                   diakses lewat GETTER dan SETTER
- * - CONSTRUCTOR   : inisialisasi koneksi database
- */
 class Santri {
-
-    // Property PRIVATE (Encapsulation)
     private $db;
     private $nama;
     private $kamar;
 
-    // Constructor
     public function __construct() {
         $this->db = Database::getInstance();
     }
-
-
-    // ---- GETTER ----
-    // Dipakai di index.php saat menampilkan form edit santri
 
     public function getNama() {
         return $this->nama;
@@ -99,10 +56,6 @@ class Santri {
         return $this->kamar;
     }
 
-
-    // ---- SETTER ----
-    // Dipakai di index.php saat proses edit santri
-
     public function setNama($nama) {
         $this->nama = $nama;
     }
@@ -111,11 +64,6 @@ class Santri {
         $this->kamar = $kamar;
     }
 
-
-    // ---- METHOD CRUD ----
-
-    // Ambil data santri — kalau $id = 0, ambil semua. Kalau ada ID, ambil satu.
-    // Kalau ambil satu, data disimpan ke property private supaya bisa dibaca pakai getter.
     public function getAll($id = 0) {
         $id = (int) $id;
 
@@ -126,9 +74,6 @@ class Santri {
 
             if ($result) {
                 $data = $result->fetch_assoc();
-
-                // Simpan ke property private (Encapsulation)
-                // Dibaca pakai getter: getNama(), getKamar()
                 if ($data != null) {
                     $this->nama  = $data['nama'];
                     $this->kamar = $data['kamar'];
@@ -172,8 +117,7 @@ class Santri {
         }
     }
 
-    // Edit santri — nama dan kamar dibaca dari property (setter),
-    // noHp langsung lewat parameter
+    // Edit santri
     public function edit($id, $noHp) {
         $id    = (int) $id;
         $nama  = $this->db->escape($this->nama);
@@ -205,34 +149,20 @@ class Santri {
     }
 }
 
-
-/**
- * =============================================
- * CLASS 3: Tagihan
- * =============================================
- * Class untuk mengelola tagihan santri.
- *
- * Konsep OOP: CONSTRUCTOR
- */
 class Tagihan {
-
-    // Property PRIVATE
     private $db;
 
-    // Constructor
     public function __construct() {
         $this->db = Database::getInstance();
     }
 
-    // Ambil tagihan — kalau $santriId = 0, ambil semua. Kalau ada, filter per santri.
+    // Ambil tagihan
     public function getAll($santriId = 0) {
         $santriId = (int) $santriId;
 
         if ($santriId > 0) {
-            // Filter tagihan milik satu santri
             $sql = "SELECT * FROM tagihan WHERE santri_id = $santriId ORDER BY tahun DESC, bulan DESC";
         } else {
-            // Ambil semua tagihan + nama santri (JOIN)
             $sql = "SELECT t.*, s.nama, s.kamar 
                     FROM tagihan t 
                     JOIN santri s ON t.santri_id = s.id 
@@ -270,7 +200,7 @@ class Tagihan {
         }
     }
 
-    // Hapus tagihan (hanya yang belum dibayar)
+    // Hapus tagihan
     public function hapus($id) {
         $id = (int) $id;
         $sql = "DELETE FROM tagihan WHERE id = $id AND status = 'belum'";
@@ -283,7 +213,7 @@ class Tagihan {
         }
     }
 
-    // Bayar tagihan — ubah status jadi 'lunas'
+    // Bayar tagihan
     public function bayar($id) {
         $id = (int) $id;
         $sql = "UPDATE tagihan SET status = 'lunas' WHERE id = $id";
@@ -297,29 +227,14 @@ class Tagihan {
     }
 }
 
-
-/**
- * =============================================
- * CLASS 4: Laporan (EXTENDS Tagihan)
- * =============================================
- * Class anak yang mewarisi class Tagihan.
- *
- * Konsep OOP:
- * - INHERITANCE  : Laporan extends Tagihan
- * - CONSTRUCTOR  : memanggil parent::__construct()
- */
 class Laporan extends Tagihan {
-
-    // Property tambahan
     private $db;
 
-    // Constructor — panggil constructor induk (Tagihan)
     public function __construct() {
         parent::__construct();
         $this->db = Database::getInstance();
     }
 
-    // Method untuk data dashboard
     public function getDashboard() {
         $bulan = (int) date('n');
         $tahun = (int) date('Y');
@@ -352,7 +267,6 @@ class Laporan extends Tagihan {
         return $data;
     }
 
-    // Method untuk laporan bulanan
     public function getLaporanBulanan($bulan, $tahun) {
         $bulan = (int) $bulan;
         $tahun = (int) $tahun;
@@ -374,18 +288,11 @@ class Laporan extends Tagihan {
     }
 }
 
-
-// =============================================
-// FUNGSI PEMBANTU (bukan class, fungsi biasa)
-// =============================================
-
-// Format angka ke Rupiah: 200000 → "Rp 200.000"
 function formatRupiah($nominal) {
     $hasil = 'Rp ' . number_format($nominal, 0, ',', '.');
     return $hasil;
 }
 
-// Nomor bulan ke nama bulan: 1 → "Januari"
 function namaBulan($bulan) {
     $daftarBulan = array(
         1  => 'Januari',

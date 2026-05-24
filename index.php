@@ -1,22 +1,14 @@
 <?php
-// =============================================
-// FILE: index.php
-// Halaman utama — Login + Dashboard berdasarkan Role
-// =============================================
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 session_start();
 require_once __DIR__ . '/classes.php';
 
-// Membuat object dari class
 $auth         = new Auth();
 $santriModel  = new Santri();
 $tagihanModel = new Tagihan();
 $laporan      = new Laporan();
 
-// =============================================
-// PROSES LOGIN
-// =============================================
 $loginError = '';
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['aksi']) && $_POST['aksi'] == 'login') {
     $berhasil = $auth->login($_POST['username'], $_POST['password']);
@@ -28,7 +20,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['aksi']) && $_POST['aks
     }
 }
 
-// Cek apakah sudah login
 $sudahLogin = false;
 $role = '';
 if (isset($_SESSION['user_id'])) {
@@ -41,9 +32,6 @@ if (isset($_SESSION['user_id'])) {
     }
 }
 
-// =============================================
-// PROSES FORM ADMIN
-// =============================================
 if ($sudahLogin && $role == 'admin' && $_SERVER['REQUEST_METHOD'] == 'POST') {
     $aksi = '';
     if (isset($_POST['aksi'])) {
@@ -56,10 +44,8 @@ if ($sudahLogin && $role == 'admin' && $_SERVER['REQUEST_METHOD'] == 'POST') {
 
     if ($aksi == 'edit_santri') {
         $id = $_POST['id'];
-        // Menggunakan SETTER untuk mengubah property private (Encapsulation)
         $santriModel->setNama($_POST['nama']);
         $santriModel->setKamar($_POST['kamar']);
-        // edit() membaca nama/kamar dari property (setter), noHp langsung lewat parameter
         $santriModel->edit($id, $_POST['no_hp']);
     }
 
@@ -87,9 +73,6 @@ if ($sudahLogin && $role == 'admin' && $_SERVER['REQUEST_METHOD'] == 'POST') {
     exit;
 }
 
-// =============================================
-// PROSES FORM SANTRI (BAYAR)
-// =============================================
 if ($sudahLogin && $role == 'santri' && $_SERVER['REQUEST_METHOD'] == 'POST') {
     $aksi = '';
     if (isset($_POST['aksi'])) {
@@ -102,9 +85,6 @@ if ($sudahLogin && $role == 'santri' && $_SERVER['REQUEST_METHOD'] == 'POST') {
     exit;
 }
 
-// =============================================
-// AMBIL DATA DARI DATABASE
-// =============================================
 $tab = 'dashboard';
 if (isset($_GET['tab'])) {
     $tab = $_GET['tab'];
@@ -114,7 +94,6 @@ $dashboard    = $laporan->getDashboard();
 $semuaSantri  = $santriModel->getAll();
 $semuaTagihan = $tagihanModel->getAll();
 
-// Edit santri — pakai GETTER untuk membaca property private
 $editSantri = null;
 $editNama   = '';
 $editKamar  = '';
@@ -128,7 +107,6 @@ if (isset($_GET['edit_santri'])) {
     }
 }
 
-// Filter laporan
 $blnFilter = date('n');
 if (isset($_GET['bulan'])) {
     $blnFilter = (int) $_GET['bulan'];
@@ -139,7 +117,6 @@ if (isset($_GET['tahun'])) {
 }
 $laporanData = $laporan->getLaporanBulanan($blnFilter, $thnFilter);
 
-// Data untuk santri yang login
 $tagihanSaya = array();
 if ($sudahLogin && $role == 'santri') {
     $tagihanSaya = $tagihanModel->getAll($_SESSION['user_id']);
@@ -197,9 +174,7 @@ if ($sudahLogin && $role == 'santri') {
 <body>
 
 <?php
-// =============================================
 // HALAMAN LOGIN
-// =============================================
 if ($sudahLogin == false) {
 ?>
 <div class="login-wrap">
@@ -219,9 +194,8 @@ if ($sudahLogin == false) {
 
 <?php
 }
-// =============================================
+
 // HALAMAN ADMIN
-// =============================================
 elseif ($role == 'admin') {
 ?>
 <nav>
@@ -454,9 +428,8 @@ elseif ($role == 'admin') {
 
 <?php
 }
-// =============================================
+
 // HALAMAN SANTRI
-// =============================================
 elseif ($role == 'santri') {
 ?>
 <nav>
